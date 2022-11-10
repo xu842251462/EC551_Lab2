@@ -58,6 +58,7 @@ module top(
     wire  uartRdy;
     wire  uartTX ;
     wire [7:0] converted;
+    reg [7:0] temp = 8'h03;
     reg  uartSend = 1;
     reg  [31:0] strIndex = 4'd0;
     reg [2:0] state = `STRING_INTRO;
@@ -125,7 +126,7 @@ module top(
         .kdata(PS2_DATA),
         .keycodeout(keycode[31:0])
     );
-    keyboardconverter key (.kb_code(keycode[7:0]),.caps_lock(caps_lock),.shift(shift),.ascii(converted));
+    kb_code_ascii_convert key (.kb_code(keycode[7:0]),.caps_lock(caps_lock),.shift(shift),.ascii(converted));
     UART_TX_CTRL tx(.SEND(uartSend),.DATA(uartData),.CLK(CLK),.READY(uartRdy),.UART_TX(uartTX));
 	always @(posedge  CLK) begin
 	   case(state)
@@ -140,14 +141,12 @@ module top(
 			                  end
 			              end
 		`STRING_NONE: if ( uartRdy == 1) begin
-		                  if(uartData != converted) begin
 		                     uartSend <= 1; 
 		                     uartData <= converted; 
-			               end else begin
+			          end else begin
 			                 uartSend <= 0;
-                              
+                             uartData <= 8'h03; 
 			               end
-			           end
 		endcase
 end
 assign UART_RXD_OUT = uartTX;
