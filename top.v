@@ -22,18 +22,21 @@
 
 module top(
     input wire CLK ,
-   // input PS2_CLK,
-   // input PS2_DATA,
+    input PS2_CLK,
+    input PS2_DATA,
    /* output [6:0]SEG,
     output [7:0]AN,
     output DP,*/
     output  UART_RXD_OUT
     );
-    reg CLK50MHZ = 0;    
-   // wire [31:0]keycode;
+    reg CLK50MHZ = 0; 
+    reg  caps_lock;
+    reg shift;
+    wire [31:0]keycode;
     reg [7:0] uartData;
     wire  uartRdy;
     wire  uartTX ;
+    wire [7:0] converted;
     reg  uartSend = 1;
     reg  [31:0] strIndex = 4'd0;
     wire [7:0] foo [0:47];
@@ -88,22 +91,19 @@ module top(
     always @(posedge(CLK ))begin
         CLK50MHZ<=~CLK50MHZ;
     end
-    //parameter [91:0] WELCOME_STR = "Hello EC551. My name is Test.\nPlease enter a mode:"; 
-    /*always @(posedge(CLK100MHZ))begin
-        CLK50MHZ<=~CLK50MHZ;
-    end*/
+
    // reg clk = 0;
    // initial begin 
    //     clk = 0;
    //     #10 clk = ~clk;
    // end
- /*   PS2Receiver keyboard (
-        .clk(CLK),
+    PS2Receiver keyboard (
+        .clk(CLK50MHZ),
         .kclk(PS2_CLK),
         .kdata(PS2_DATA),
         .keycodeout(keycode[31:0])
-    );*/
-    
+    );
+    keyboardconverter key (.kb_code(keycode[7:0]),.caps_lock(caps_lock),.shift(shift),.ascii(converted));
     UART_TX_CTRL tx(.SEND(uartSend),.DATA(uartData),.CLK(CLK),.READY(uartRdy),.UART_TX(uartTX));
 	always @(posedge  CLK) begin
 		if ( uartRdy == 1) begin
@@ -112,7 +112,8 @@ module top(
 			  uartData <= foo[strIndex];
 			  strIndex <= strIndex + 1;
 		   end else if (strIndex > 8'd47)begin
-			  uartSend <= 0;
+			   uartSend <= 1;
+			   uartData <= converted;
 		end
 	end
 end
