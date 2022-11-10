@@ -18,24 +18,49 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
+`define INPUT_STATE_BLOCKED 1'b0
+`define INPUT_STATE_ALLOWED 1'b1
 
+`define EXEC_STATE_INTRO 2'b00
+`define EXEC_STATE_BENCH 2'b01
+`define EXEC_STATE_CPU   2'b10
+`define EXEC_STATE_ALU   2'b11
+
+//connecting the string input to printer
+`define STRING_NONE    3'b000
+`define STRING_INTRO   3'b001
+`define STRING_BENCH   3'b010
+`define STRING_ALU     3'b011
+`define STRING_CPU     3'b100
+`define STRING_INVALID 3'b101
+`define STRING_REPORT  3'b110
+
+//connecting to the intro_part, which includes I, A, B module
+`define INTRO_ENTER_CPU     3'b000
+`define INTRO_ENTER_ALU     3'b001
+`define INTRO_ENTER_BENCH   3'b010
+`define INTRO_PRINT_INVALID 3'b011
 
 module top(
     input wire CLK ,
-   // input PS2_CLK,
-   // input PS2_DATA,
+    input PS2_CLK,
+    input PS2_DATA,
    /* output [6:0]SEG,
     output [7:0]AN,
     output DP,*/
     output  UART_RXD_OUT
     );
-    reg CLK50MHZ = 0;    
-   // wire [31:0]keycode;
+    reg CLK50MHZ = 0; 
+    reg  caps_lock;
+    reg shift;
+    wire [31:0]keycode;
     reg [7:0] uartData;
     wire  uartRdy;
     wire  uartTX ;
+    wire [7:0] converted;
     reg  uartSend = 1;
     reg  [31:0] strIndex = 4'd0;
+    reg [2:0] state = `STRING_INTRO;
     wire [7:0] foo [0:47];
     assign foo[0]  = "H";
     assign foo[1]  = "e";
@@ -88,33 +113,42 @@ module top(
     always @(posedge(CLK ))begin
         CLK50MHZ<=~CLK50MHZ;
     end
-    //parameter [91:0] WELCOME_STR = "Hello EC551. My name is Test.\nPlease enter a mode:"; 
-    /*always @(posedge(CLK100MHZ))begin
-        CLK50MHZ<=~CLK50MHZ;
-    end*/
+
    // reg clk = 0;
    // initial begin 
    //     clk = 0;
    //     #10 clk = ~clk;
    // end
- /*   PS2Receiver keyboard (
-        .clk(CLK),
+    PS2Receiver keyboard (
+        .clk(CLK50MHZ),
         .kclk(PS2_CLK),
         .kdata(PS2_DATA),
         .keycodeout(keycode[31:0])
-    );*/
-    
+    );
+    keyboardconverter key (.kb_code(keycode[7:0]),.caps_lock(caps_lock),.shift(shift),.ascii(converted));
     UART_TX_CTRL tx(.SEND(uartSend),.DATA(uartData),.CLK(CLK),.READY(uartRdy),.UART_TX(uartTX));
 	always @(posedge  CLK) begin
-		if ( uartRdy == 1) begin
-		   if (strIndex <= 8'd47) begin
-		      uartSend <= 1;
-			  uartData <= foo[strIndex];
-			  strIndex <= strIndex + 1;
-		   end else if (strIndex > 8'd47)begin
-			  uartSend <= 0;
-		end
-	end
+	   case(state)
+		  `STRING_INTRO: if ( uartRdy == 1) begin
+		                      if (strIndex <= 8'd47) begin
+		                          uartSend <= 1;
+                                  uartData <= foo[strIndex];
+			                      strIndex <= strIndex + 1;
+		                      end else if (strIndex > 8'd47)begin
+			                      uartSend <= 0;
+			                      state <= `STRING_NONE;
+			                  end
+			              end
+		`STRING_NONE: if ( uartRdy == 1) begin
+		                  if(uartData != converted) begin
+		                     uartSend <= 1; 
+		                     uartData <= converted; 
+			               end else begin
+			                 uartSend <= 0;
+                              
+			               end
+			           end
+		endcase
 end
 assign UART_RXD_OUT = uartTX;
 endmodule
