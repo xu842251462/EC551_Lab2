@@ -18,27 +18,44 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
+`define INPUT_STATE_BLOCKED 1'b0
+`define INPUT_STATE_ALLOWED 1'b1
 
+`define EXEC_STATE_INTRO 2'b00
+`define EXEC_STATE_BENCH 2'b01
+`define EXEC_STATE_CPU   2'b10
+`define EXEC_STATE_ALU   2'b11
+
+//connecting the string input to printer
+`define STRING_NONE    3'b000
+`define STRING_INTRO   3'b001
+`define STRING_BENCH   3'b010
+`define STRING_ALU     3'b011
+`define STRING_CPU     3'b100
+`define STRING_INVALID 3'b101
+`define STRING_REPORT  3'b110
+
+//connecting to the intro_part, which includes I, A, B module
+`define INTRO_ENTER_CPU     3'b000
+`define INTRO_ENTER_ALU     3'b001
+`define INTRO_ENTER_BENCH   3'b010
+`define INTRO_PRINT_INVALID 3'b011
 
 module top(
     input wire CLK ,
-    input PS2_CLK,
-    input PS2_DATA,
-   /* output [6:0]SEG,
-    output [7:0]AN,
-    output DP,*/
-    output  UART_RXD_OUT
+    input wire PS2_CLK,
+    input wire PS2_DATA,            // UART RX Port
+
+    output wire  UART_RXD_OUT
     );
     reg CLK50MHZ = 0; 
     reg  caps_lock;
-    reg shift;
     wire [31:0]keycode;
-    reg [7:0] uartData;
-    wire  uartRdy;
-    wire  uartTX ;
+    
     wire [7:0] converted;
-    reg  uartSend = 1;
-    reg  [31:0] strIndex = 4'd0;
+    
+
+    
     wire [7:0] foo [0:47];
     assign foo[0]  = "H";
     assign foo[1]  = "e";
@@ -88,34 +105,262 @@ module top(
     assign foo[45] = "d";
     assign foo[46] = "e";
     assign foo[47] = ":";
+    
+    
+    wire [7:0] report [0:26];
+    assign report[0]  = "M";
+    assign report[1]  = "O";
+    assign report[2]  = "D";
+    assign report[3]  = "E";
+    assign report[4]  = "L";
+    assign report[5]  = " ";
+    assign report[6]  = "I";
+    assign report[7]  = ":";
+    assign report[8]  = "E";
+    assign report[9]  = "N";
+    assign report[10] = "T";
+    assign report[11] = "E";
+    assign report[12] = "R";
+    assign report[13] = " ";
+    assign report[14] = "I";
+    assign report[15] = "N";
+    assign report[16] = "S";
+    assign report[17] = "T";
+    assign report[18] = "R";
+    assign report[19] = "U";
+    assign report[20] = "C";
+    assign report[21] = "T";
+    assign report[22] = "I";
+    assign report[23] = "O";
+    assign report[24] = "N";
+    assign report[25] = "S";
+    assign report[26] = ":";
+   
+    wire [7:0] cpui [0:35];
+    assign cpui[0]  = "M";
+    assign cpui[1]  = "O";
+    assign cpui[2]  = "D";
+    assign cpui[3]  = "E";
+    assign cpui[4]  = "L";
+    assign cpui[5]  = " ";
+    assign cpui[6]  = "L";
+    assign cpui[7]  = ":";
+    assign cpui[8]  = "L";
+    assign cpui[9]  = "O";
+    assign cpui[10] = "A";
+    assign cpui[11] = "D";
+    assign cpui[12] = " ";
+    assign cpui[13] = " ";
+    assign cpui[14] = "I";
+    assign cpui[15] = "N";
+    assign cpui[16] = "S";
+    assign cpui[17] = "T";
+    assign cpui[18] = "R";
+    assign cpui[19] = "U";
+    assign cpui[20] = "C";
+    assign cpui[21] = "T";
+    assign cpui[22] = "I";
+    assign cpui[23] = "O";
+    assign cpui[24] = "N";
+    assign cpui[25] = "S";
+    assign cpui[26] = " ";
+    assign cpui[27] = "F";
+    assign cpui[28] = "R";
+    assign cpui[29] = "O";
+    assign cpui[30] = "M";
+    assign cpui[31] = " ";
+    assign cpui[32] = "U";
+    assign cpui[33] = "A";
+    assign cpui[34] = "R";
+    assign cpui[35] = "T";
+
+   wire [7:0] alui [0:47];
+    assign alui[0]  = "M";
+    assign alui[1]  = "O";
+    assign alui[2]  = "D";
+    assign alui[3]  = "E";
+    assign alui[4]  = "L";
+    assign alui[5]  = " ";
+    assign alui[6]  = "A";
+    assign alui[7]  = ":";
+    assign alui[8]  = "L";
+    assign alui[9]  = "O";
+    assign alui[10] = "A";
+    assign alui[11] = "D";
+    assign alui[12] = " ";
+    assign alui[13] = " ";
+    assign alui[14] = "I";
+    assign alui[15] = "N";
+    assign alui[16] = "S";
+    assign alui[17] = "T";
+    assign alui[18] = "R";
+    assign alui[19] = "U";
+    assign alui[20] = "C";
+    assign alui[21] = "T";
+    assign alui[22] = "I";
+    assign alui[23] = "O";
+    assign alui[24] = "N";
+    assign alui[25] = "S";
+    assign alui[26] = " ";
+    assign alui[27] = "F";
+    assign alui[28] = "R";
+    assign alui[29] = "O";
+    assign alui[30] = "M";
+    assign alui[31] = " ";
+    assign alui[32] = "A";
+    assign alui[33] = "L";
+    assign alui[34] = "U";
+
+    wire [7:0] benchi [0:20];
+    assign benchi[0]  = "M";
+    assign benchi[1]  = "O";
+    assign benchi[2]  = "D";
+    assign benchi[3]  = "E";
+    assign benchi[4]  = "L";
+    assign benchi[5]  = " ";
+    assign benchi[6]  = "B";
+    assign benchi[7]  = ":";
+    assign benchi[8]  = "B";
+    assign benchi[9]  = "E";
+    assign benchi[10] = "N";
+    assign benchi[11] = "C";
+    assign benchi[12] = "H";
+    assign benchi[13] = " ";
+    assign benchi[14] = "P";
+    assign benchi[15] = "R";
+    assign benchi[16] = "O";
+    assign benchi[17] = "G";
+    assign benchi[18] = "R";
+    assign benchi[19] = "A";
+    assign benchi[20] = "M";
+    
+   
     always @(posedge(CLK ))begin
         CLK50MHZ<=~CLK50MHZ;
     end
 
-   // reg clk = 0;
-   // initial begin 
-   //     clk = 0;
-   //     #10 clk = ~clk;
-   // end
-    PS2Receiver keyboard (
+   
+    // Keyboard Variables
+	wire [7:0] key;
+	wire       shift;
+	/*keyboard_controller keyboard (
+		.clk(PS2_CLK),
+		.data(PS2_DATA),
+		.key(key),
+		.shift(shift)
+	);*/
+   
+    wire  uartRdy;
+    reg [7:0] uartData;
+    reg  uartSend = 0;
+    wire uartTX ;
+     PS2Receiver keyboard (
         .clk(CLK50MHZ),
         .kclk(PS2_CLK),
         .kdata(PS2_DATA),
         .keycodeout(keycode[31:0])
     );
-    keyboardconverter key (.kb_code(keycode[7:0]),.caps_lock(caps_lock),.shift(shift),.ascii(converted));
-    UART_TX_CTRL tx(.SEND(uartSend),.DATA(uartData),.CLK(CLK),.READY(uartRdy),.UART_TX(uartTX));
-	always @(posedge  CLK) begin
-		if ( uartRdy == 1) begin
-		   if (strIndex <= 8'd47) begin
-		      uartSend <= 1;
-			  uartData <= foo[strIndex];
-			  strIndex <= strIndex + 1;
-		   end else if (strIndex > 8'd47)begin
-			   uartSend <= 1;
-			   uartData <= converted;
-		end
-	end
-end
-assign UART_RXD_OUT = uartTX;
+    kb_code_ascii_convert ss (.kb_code(keycode[7:0]),.caps_lock(caps_lock),.shift(shift),.ascii(key));
+    UART_TX_CTRL tx(
+        .SEND(uartSend),
+        .DATA(uartData),
+        .CLK(CLK),
+        .READY(uartRdy),
+        .UART_TX(uartTX)
+    );
+    
+    reg [31:0] strIndex = 4'd0;
+    reg [2:0] state = `STRING_INTRO;
+    
+	always @(posedge CLK) begin
+           case(state)
+               `STRING_INTRO: if (uartRdy == 1) begin
+                                  if (strIndex <= 8'd47) begin
+                                      uartSend <= 1;
+                                      uartData <= foo[strIndex];
+                                      strIndex <= strIndex + 1;
+                                  end else if (strIndex > 8'd47)begin
+                                      strIndex <= 0;
+                                      uartSend <= 0;
+                                      state <= `STRING_NONE;
+                                  end
+                              end
+                              
+                `STRING_NONE: if (uartRdy == 1) begin //choose module
+                                  if(uartData != key) begin
+                                  
+                                     uartSend <= 1; 
+                                     uartData <= key; 
+                                     
+                                     if (key == 8'h69) //i module
+                                        state <= `STRING_REPORT;
+                                     else if (key == 8'h61)
+                                        state <= `STRING_ALU;
+                                     else if (key == 8'h6C)
+                                        state <= `STRING_CPU;
+                                     else if (key == 8'h62)
+                                        state <= `STRING_BENCH;
+                                        
+                                   end else begin
+                                     strIndex <= 0;
+                                     uartSend <= 0;
+                                     state <= `STRING_NONE; 
+                                   end
+                                end
+                `STRING_ALU: if (uartRdy == 1) begin
+                                  if (strIndex <= 8'd34) begin
+                                      uartSend <= 1;
+                                      uartData <= alui[strIndex];
+                                      strIndex <= strIndex + 1;
+                                  end else if (strIndex > 8'd34)begin
+                                      strIndex <=0;
+                                      uartData <= key;
+                                      uartSend <= 0;
+                                      state <= `STRING_NONE;
+                                  end
+                              end
+                 
+                 `STRING_CPU: if (uartRdy == 1) begin
+                                  if (strIndex <= 8'd35) begin
+                                      uartSend <= 1;
+                                      uartData <= cpui[strIndex];
+                                      strIndex <= strIndex + 1;
+                                  end else if (strIndex > 8'd35)begin
+                                      strIndex<=0;
+                                      uartData <= key;
+                                      uartSend <= 0;
+                                      state <= `STRING_NONE;
+                                  end
+                              end
+                  
+                 `STRING_BENCH:if(uartRdy == 1) begin
+                                  if (strIndex <= 8'd20) begin
+                                      uartSend <= 1;
+                                      uartData <= benchi[strIndex];
+                                      strIndex <= strIndex + 1;
+                                  end else if (strIndex > 8'd20)begin
+                                      strIndex<=0;
+                                      uartData <= key;
+                                      uartSend <= 0;
+                                      state <= `STRING_NONE;
+                                  end
+                               end
+                  `STRING_REPORT:if(uartRdy == 1) begin
+                                  if (strIndex <= 8'd26) begin
+                                      uartSend <= 1;
+                                      uartData <= report[strIndex];
+                                      strIndex <= strIndex + 1;
+                                  end else if (strIndex > 8'd26)begin
+                                      strIndex<=0;
+                                      uartData <= key;
+                                      uartSend <= 0;
+                                      state <= `STRING_NONE;
+                                  end
+                               end
+                  
+                endcase
+        end
+    
+    assign UART_RXD_OUT = uartTX;
+    
 endmodule
