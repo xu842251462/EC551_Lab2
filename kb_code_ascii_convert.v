@@ -1,5 +1,14 @@
 `timescale 1ns / 1ps
-
+//////////////////////////////////////////////////////////////////////////////////
+// Company: BU
+// Engineer: Josh Wildey
+// 
+// Create Date:    02:13:26 04/11/2018 
+// Module Name:    kb_code_ascii_convert 
+// Project Name: Lab 2 - Peripheral and Processor Integration with I/O
+// Target Devices: Nexys3 Spartan 6
+// Revision 0.01 - File Created
+//////////////////////////////////////////////////////////////////////////////////
 module kb_code_ascii_convert(
 	input  wire [7:0] kb_code,
 	input  wire       caps_lock,
@@ -255,6 +264,8 @@ module kb_code_ascii_convert(
 			end
 			// space
 			8'h29: ascii <= 8'h20;
+			8'h12: ascii <= 8'hFE;
+			8'h59: ascii <= 8'hFE;
 			default: ascii <= kb_code;
 		endcase
 	end
