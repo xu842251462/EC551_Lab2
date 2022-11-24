@@ -1,4 +1,14 @@
-`EXE_STRING_CPU:if (uartRdy == 1) begin 
+`define EXE_STATE_CPU1   6'b110000
+`define EXE_STATE_CPU2   6'b101000
+`define EXE_STATE_CPU3   6'b100100
+`define EXE_STATE_CPU4   6'b110001
+`define EXE_STATE_CPU5   6'b100000
+`define EXE_STATE_CPU6   6'b101001
+`define EXE_STATE_CPU7   6'b100011
+`define PRINT_CPU        6'b100001
+
+
+                `EXE_STRING_CPU:if (uartRdy == 1) begin 
                                      if (keyb[15:8] != 8'hf0) begin
                                          q <= 1;
                                          uartSend <= 0;
