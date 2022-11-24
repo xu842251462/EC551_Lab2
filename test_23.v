@@ -1,0 +1,5 @@
+//`define EXE_STATE_CPU    6'b100000
+//`define EXE_STATE_CPU1   6'b110000
+//`define EXE_STATE_CPU2   6'b101000
+//`define EXE_STATE_CPU3   6'b100100
+//`define EXE_STATE_CPU4   6'b100010
