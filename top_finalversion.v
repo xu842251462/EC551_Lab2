@@ -250,7 +250,20 @@ module top(
     wire  uartTX ;
     reg   [7:0] option; //for choosing module   
 	wire  [31:0] keyb;
-	
+   reg enable = 0;
+   wire gated_clk;
+   BUFGCE #(
+   .CE_TYPE("SYNC"),               // ASYNC, HARDSYNC, SYNC
+   .IS_CE_INVERTED(1'b0),          // Programmable inversion on CE
+   .IS_I_INVERTED(1'b0),           // Programmable inversion on I
+   .SIM_DEVICE("ULTRASCALE_PLUS")  // ULTRASCALE, ULTRASCALE_PLUS
+)
+BUFGCE_inst (
+   .O(CLK),   // 1-bit output: Buffer
+   .CE(enable), // 1-bit input: Buffer enable
+   .I(gated_clk)    // 1-bit input: Buffer
+);
+
 	PS2Receiver t(
      .clk(CLK),
      .kclk(PS2_CLK), //in
@@ -270,7 +283,6 @@ module top(
         .READY(uartRdy),
         .UART_TX(uartTX)
     );
-    
    
    //veriables for exec cpu 
     reg  [7:0] ins [0:3];
@@ -346,6 +358,7 @@ module top(
                                         uartData <= enter[strIndex];
                                         strIndex <= strIndex + 1;
                                     end else begin
+                            
                                       if (keyb[15:8] != 8'hf0) begin
                                            p <= 1;
                                            uartSend <= 0;
@@ -361,6 +374,14 @@ module top(
                                                    strIndex <= 0;
                                                    uartSend <= 1;
                                                    uartData <= keyb[7:0];
+                                                  
+                                                 /*  case(option)
+                                                   8'h69:  state <= `STRING_REPORT;
+                                                   8'h61:  state <= `STRING_ALU;
+                                                   8'h6C:  state <= `STRING_CPU;
+                                                   8'h62:  state <= `STRING_BENCH; 
+                                                   endcase*/
+                                                   
                                                if (option == 8'h69) begin //i module
 
                                                    state <= `STRING_REPORT;
@@ -398,16 +419,18 @@ module top(
 
                     //ENTER NUM 1
                 `EXE_STATE_ALU:if (uartRdy == 1) begin //choose module
+                          
                                 if (keyb[15:8] != 8'hf0) begin
                                     q <= 1;
                                     uartSend <= 0;
                                     uartData <= 8'h20;
                                 end else if (q == 1) begin
+                                    
                                     if (keyb[7:0] >= 8'h30 && keyb[7:0] <= 8'h39) begin
                                         uartSend <= 1;
                                         uartData <= keyb[7:0];                                  
                                         A <= keyb[7:0];
-                                 
+                              
                                         state <= `EXE_STATE_ALU1;
                                         end 
                                         q<=0; 
