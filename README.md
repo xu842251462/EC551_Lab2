@@ -12,7 +12,6 @@ Using following table to build keyboard to ascii<br />
 
 The diagram of UART-TX and UART-RX<br />
 
-![alt text](https://github.com/xu842251462/EC551_Lab2/blob/bin/keyboard_fpga.PNG](https://github.com/xu842251462/EC551_Lab2/blob/bin/Screen%20Shot%202023-01-10%20at%2010.09.08%20PM.png)
-
+![alt text](https://github.com/xu842251462/EC551_Lab2/blob/bin/Screen%20Shot%202023-01-10%20at%2010.09.08%20PM.png)
 
 
